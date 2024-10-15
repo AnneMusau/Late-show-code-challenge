@@ -1,5 +1,5 @@
 from app import app, db 
-from models import Guest, Episode, Appearance , EpisodeSchema, GuestSchema, AppearanceSchema
+from models import Guest, Episode, Appearance 
 from datetime import datetime
 
 guest_data = [
@@ -54,7 +54,6 @@ guest_data = [
         {"year": 1999, "occupation": "musician", "date": "2/28/99", "group": "Music", "guest": "Katy Perry"},
     ]
 
-
 with app.app_context():
     for guest in guest_data:
         # Check if the episode already exists
@@ -64,25 +63,33 @@ with app.app_context():
             # Create a new Episode instance if it doesn't exist
             episode_instance = Episode(
                 date=datetime.strptime(guest['date'], '%m/%d/%y').date(),
-                number=len(Episode.query.all()) + 1,  # Generate a unique number
+                number=len(Episode.query.all()) + 1, 
                 year=guest['year'],
                 group=guest['group']
             )
             db.session.add(episode_instance)
-            db.session.commit()  # Commit to save the episode before adding the appearance
-        
+            db.session.commit()  
+
         # Check if the guest already exists
         guest_instance = Guest.query.filter_by(name=guest['guest']).first()
 
-        if guest_instance:
-            # Check if the appearance already exists
-            appearance_instance = Appearance.query.filter_by(episode=episode_instance, guest=guest_instance).first()
-            if not appearance_instance:
-                new_appearance = Appearance(
-                    rating=guest.get('rating', 5),  # Assuming a default rating if not provided
-                    episode=episode_instance,
-                    guest=guest_instance
-                )
-                db.session.add(new_appearance)
+        if not guest_instance:
+            # Create a new Guest instance if it doesn't exist
+            guest_instance = Guest(
+                name=guest['guest'],
+                occupation=guest['occupation'],
+            )
+            db.session.add(guest_instance)
+            db.session.commit()  
+        # Check if the appearance already exists
+        appearance_instance = Appearance.query.filter_by(episode_id=episode_instance.id, guest_id=guest_instance.id).first()
+        
+        if not appearance_instance:
+            new_appearance = Appearance(
+                rating=guest.get('rating', 5),  # Assuming a default rating 
+                episode_id=episode_instance.id,
+                guest_id=guest_instance.id
+            )
+            db.session.add(new_appearance)
 
     db.session.commit()
